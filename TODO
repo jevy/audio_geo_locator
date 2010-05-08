@@ -1,0 +1,2 @@
+* Use the gst 'spectrum' plugin to send messages when a particular tone is above a certain threshold
+* Write a cucumber spec to play a tone and ensure the fft message comes through

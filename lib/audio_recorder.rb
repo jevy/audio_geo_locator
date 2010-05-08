@@ -1,19 +1,17 @@
 require 'gst'
 
 class AudioRecorder
-  def record_wav(loc)
+  def record
     Gst.init
 
     pipeline = Gst::Pipeline.new
     alsasrc = Gst::ElementFactory.make("alsasrc")
-    audioconvert = Gst::ElementFactory.make("audioconvert")
-    audioresample = Gst::ElementFactory.make("audioresample")
-    wavenc = Gst::ElementFactory.make("wavenc")
-    filesink = Gst::ElementFactory.make("filesink")
-    filesink.location = loc
+    spectrum = Gst::ElementFactory.make("spectrum")
+    spectrum.set_property('bands', 20)
+    fakesink = Gst::ElementFactory.make("fakesink")
 
-    pipeline.add(alsasrc, audioconvert, audioresample, wavenc, filesink)
-    alsasrc >> audioconvert >> audioresample >> wavenc >> filesink
+    pipeline.add(alsasrc, spectrum, fakesink)
+    alsasrc >> spectrum >> fakesink 
 
     loop = GLib::MainLoop.new(nil, false)
     
@@ -26,6 +24,15 @@ class AudioRecorder
       when Gst::Message::ERROR
         p message.parse
         loop.quit
+      when Gst::Message::ELEMENT
+        p message.structure
+        if message.source.class == Gst::ElementSpectrum
+          puts "spectrum"
+          puts "timestamp: " + message.structure['timestamp'].to_s
+        else
+          puts "element"
+        end
+
       end
       true
     end
@@ -43,5 +50,5 @@ class AudioRecorder
 end
 
 rec = AudioRecorder.new
-rec.record_wav(ARGV.first)
+rec.record
 
